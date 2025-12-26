@@ -1,0 +1,110 @@
+﻿@model SEDetector.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Detector Dashboard";
+}
+
+<div class="text-center mb-5">
+    <h1 class="display-4">Social Engineering Detector</h1>
+    <p class="lead">Analyze text, links, or screenshots for malicious patterns.</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="analysisTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link @(Model.Request?.AnalysisType == "Text" || Model.Request?.AnalysisType == null ? "active" : "")"
+                                onclick="setAnalysisType('Text')" data-bs-toggle="tab" data-bs-target="#text-tab" type="button">
+                            Analyze Text
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link @(Model.Request?.AnalysisType == "URL" ? "active" : "")"
+                                onclick="setAnalysisType('URL')" data-bs-toggle="tab" data-bs-target="#url-tab" type="button">
+                            Analyze URL
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link @(Model.Request?.AnalysisType == "Screenshot" ? "active" : "")"
+                                onclick="setAnalysisType('Screenshot')" data-bs-toggle="tab" data-bs-target="#image-tab" type="button">
+                            Analyze Screenshot
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <form asp-action="Index" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="Request.AnalysisType" id="AnalysisType" />
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade @(Model.Request?.AnalysisType == "Text" || Model.Request?.AnalysisType == null ? "show active" : "")" id="text-tab">
+                            <div class="mb-3">
+                                <label class="form-label">Paste suspicious message:</label>
+                                <textarea asp-for="Request.InputText" class="form-control" rows="5" placeholder="e.g. Kindly do the needful and verify your account..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade @(Model.Request?.AnalysisType == "URL" ? "show active" : "")" id="url-tab">
+                            <div class="mb-3">
+                                <label class="form-label">Paste URL:</label>
+                                <input asp-for="Request.InputUrl" class="form-control" placeholder="http://example.com" />
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade @(Model.Request?.AnalysisType == "Screenshot" ? "show active" : "")" id="image-tab">
+                            <div class="mb-3">
+                                <label class="form-label">Upload Screenshot:</label>
+                                <input asp-for="Request.Screenshot" type="file" class="form-control" accept="image/*" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-3">Run Analysis</button>
+                </form>
+            </div>
+        </div>
+
+        @if (Model.Result != null)
+        {
+            <div class="card border-@(Model.Result.IsThreat ? "danger" : "success") mb-3">
+                <div class="card-header bg-@(Model.Result.IsThreat ? "danger" : "success") text-white">
+                    Analysis Result: @Model.Result.RiskLevel Risk
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Confidence: @(Model.Result.ConfidenceScore * 100)%</h5>
+
+                    @if (Model.Result.ExtractedText != null)
+                    {
+                        <div class="alert alert-secondary">
+                            <strong>OCR Extracted Text:</strong> <small>@Model.Result.ExtractedText</small>
+                        </div>
+                    }
+
+                    @if (Model.Result.Flags.Any())
+                    {
+                        <h6>Detection Flags:</h6>
+                        <ul>
+                            @foreach (var flag in Model.Result.Flags)
+                            {
+                                <li class="text-danger">@flag</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-success">No obvious social engineering patterns detected.</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setAnalysisType(type) {
+            document.getElementById('AnalysisType').value = type;
+        }
+    </script>
+}
